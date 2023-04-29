@@ -36,8 +36,8 @@ struct CIRCLE {
 };
 CIRCLE ball = {100,120,20, 100,100,120,120};
 RECTA wall;
-RECTA player_1 = {5,200,10,400};
-RECTA player_2 = {990,200,995,400};
+RECTA player_1 = {30,200,35,400};
+RECTA player_2 = {970,200,975,400};
 
 //Desenhar estruturas RECTA
 void DrawRectangle(RECTA rect) {
