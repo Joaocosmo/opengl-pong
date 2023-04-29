@@ -31,7 +31,10 @@ char string[100];
 struct RECTA {
   float left, top, right, bottom;
 };
-RECTA ball = {100,100,120,120};
+struct CIRCLE {
+  float x, y, radius,left, top, right, bottom;
+};
+CIRCLE ball = {100,120,20, 100,100,120,120};
 RECTA wall;
 RECTA player_1 = {5,200,10,400};
 RECTA player_2 = {990,200,995,400};
@@ -45,18 +48,18 @@ void DrawRectangle(RECTA rect) {
    glVertex2f(rect.left, rect.top);
   glEnd();
 }
-
-void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius){
+//Desenhar estrutua CIRCLE
+void DrawCircle(CIRCLE circl){
 	int i;
 	int triangleAmount = 20; //# of triangles used to draw circle
-	
+	float PI = 3.14159265358979323846;
 	//GLfloat radius = 0.8f; //radius
 	GLfloat twicePi = 2.0f * PI;
 	
 	glBegin(GL_TRIANGLE_FAN);
-		glVertex2f(x, y); // center of circle
+		glVertex2f(circl.x, circl.y); // center of circle
 		for(i = 0; i <= triangleAmount;i++) { 
-			glVertex2f(x + (radius * cos(i *  twicePi / triangleAmount)),y + (radius * sin(i * twicePi / triangleAmount)));
+			glVertex2f(circl.x + (circl.radius * cos(i *  twicePi / triangleAmount)),circl.y + (circl.radius * sin(i * twicePi / triangleAmount)));
 		}
 	glEnd();
 }
@@ -91,6 +94,8 @@ void Timer(int v) {
   ball.right += Xspeed;
   ball.top += Yspeed;
   ball.bottom += Yspeed;
+  ball.x += Xspeed;
+  ball.y += Yspeed;
   updatePosPlayer();
   glutTimerFunc(1, Timer, 1); // Acada 1 milisegundo cama Timer
 }
@@ -111,7 +116,7 @@ void stop() {
   exit(0);
 }
 //Testa se houve colisão e retorna o tipo de colição
-int checkCollisionBallWall(RECTA ball, RECTA wall) {
+int checkCollisionBallWall(CIRCLE ball, RECTA wall) {
   if (ball.right >= wall.right)
     return FROM_RIGHT;
   if (ball.left <= wall.left)
@@ -123,7 +128,7 @@ int checkCollisionBallWall(RECTA ball, RECTA wall) {
   else return 0;
 }
 //Varifica gol do jogador 1
-bool checkGollPlayer1(RECTA ball, RECTA player) //Esquerda
+bool checkGollPlayer1(CIRCLE ball, RECTA player) //Esquerda
 {
   if (ball.left <= player.right && ball.top >= player.top && ball.bottom <= player.bottom) {
     return true;
@@ -131,7 +136,7 @@ bool checkGollPlayer1(RECTA ball, RECTA player) //Esquerda
   return false;
 }
 //Varifica gol do jogador 2
-bool checkgollPlayer2(RECTA ball, RECTA player) //Direita
+bool checkgollPlayer2(CIRCLE ball, RECTA player) //Direita
 {
   if (ball.right >= player.left && ball.top >= player.top && ball.bottom <= player.bottom) {
     return true;
@@ -212,7 +217,7 @@ void Render() {
   wall.right = WINDOW_WIDTH;
   wall.bottom = WINDOW_HEIGHT;
 
-  DrawRectangle(ball);
+  DrawCircle(ball);
 
   switch (checkCollisionBallWall(ball, wall) )
   {
@@ -236,7 +241,7 @@ void Render() {
 
   DrawRectangle(player_1);
   DrawRectangle(player_2);
-  drawFilledCircle(200,500,20)
+
   if (checkGollPlayer1(ball, player_1))
     Xspeed = delta;
   if (checkgollPlayer2(ball, player_2))
