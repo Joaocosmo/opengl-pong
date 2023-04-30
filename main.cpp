@@ -19,7 +19,7 @@ int playerResult_1 = 0;
 int playerResult_2 = 0;
 float Xspeed = 4, Yspeed = 4;
 float delta = 4;
-GLint playerSpeed = 20;
+int playerSpeed = 20;
 float ty1 = 0.0f, ty2 = 0.0f;
 
 //Positivo ou neativo de acordo com a colisão da bola
@@ -33,9 +33,9 @@ struct RECTA {
   float left, top, right, bottom;
 };
 struct CIRCLE {
-  float x, y, radius,left, top, right, bottom;
+  float x, y, radius;
 };
-CIRCLE ball = {100,120,20,80,140,120,100};
+CIRCLE ball = {100,120,20};
 RECTA wall;
 RECTA player_1 = {30,200,35,400};
 RECTA player_2 = {970,200,975,400};
@@ -93,10 +93,6 @@ void updatePosPlayer() {
 void Timer(int v) {
   if (!paused)
   {
-    ball.left += Xspeed;
-    ball.right += Xspeed;
-    ball.top += Yspeed;
-    ball.bottom += Yspeed;
     ball.x += Xspeed;
     ball.y += Yspeed;
     updatePosPlayer();
@@ -121,13 +117,17 @@ void stop() {
 }
 //Testa se houve colisão e retorna o tipo de colição
 int checkCollisionBallWall(CIRCLE ball, RECTA wall) {
-  if (ball.right >= wall.right)
+  int xmaisraio = ball.x + ball.radius;
+  int xmenosraio = ball.x - ball.radius;
+  int ymaisraio = ball.y + ball.radius;
+  int ymenosraio = ball.y - ball.radius;
+  if (xmaisraio >= wall.right)
     return FROM_RIGHT;
-  if (ball.left <= wall.left)
+  if (xmenosraio<= wall.left)
     return FROM_LEFT;
-  if (ball.top <= wall.top)
+  if (ymenosraio <= wall.top)
     return FROM_TOP;
-  if (ball.bottom >= wall.bottom)
+  if (ymaisraio >= wall.bottom)
     return FROM_BOTTOM;
   else return 0;
 }
@@ -135,7 +135,10 @@ int checkCollisionBallWall(CIRCLE ball, RECTA wall) {
 bool checkRebatePlayer1(CIRCLE ball, RECTA player) //Esquerda
 {
   int xmenosraio = ball.x - ball.radius;
-  if (xmenosraio <= player.right && ball.top >= player.top && ball.bottom <= player.bottom) {
+  int ymaisraio = ball.y + ball.radius;
+  int ymenosraio = ball.y - ball.radius;
+
+  if (xmenosraio <= player.right && ymaisraio >= player.top && ymenosraio <= player.bottom) {
     return true;
   }
   return false;
@@ -144,7 +147,9 @@ bool checkRebatePlayer1(CIRCLE ball, RECTA player) //Esquerda
 bool checkRebatePlayer2(CIRCLE ball, RECTA player) //Direita
 {
   int xmaisraio = ball.x + ball.radius;
-  if (xmaisraio >= player.left && ball.top >= player.top && ball.bottom <= player.bottom) {
+  int ymaisraio = ball.y + ball.radius;
+  int ymenosraio = ball.y - ball.radius;
+  if (xmaisraio >= player.left && ymaisraio >= player.top && ymenosraio <= player.bottom) {
     return true;
   }
   return false;
@@ -169,7 +174,7 @@ void eventKeyboard(GLubyte key, GLint x, GLint y) {
     case 's':
       ty1 = playerSpeed;
       break;
-  }
+  }  
 }
 // OpenGL Setting
 void Setting(void) {
@@ -204,6 +209,7 @@ void Render() {
     wall.bottom = WINDOW_HEIGHT;
 
     DrawCircle(ball);
+
     switch (checkCollisionBallWall(ball, wall) )
     {
         case FROM_RIGHT:
@@ -226,6 +232,8 @@ void Render() {
           break;
     }
 
+    if(playerResult_1 == 15 || playerResult_2 == 15) stop();    
+
     DrawRectangle(player_1);
     DrawRectangle(player_2);
 
@@ -242,13 +250,12 @@ void Render() {
     glutSwapBuffers(); //Troca de buffer
   }
 }
-
 int main(int argc, char ** argv) {
   glutInit( & argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
   glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
   glutInitWindowPosition(0, 0);
-  glutCreateWindow("GAME");
+  glutCreateWindow("PONG-GMR");
   Setting();
   glutDisplayFunc(Render);
   glutIdleFunc(Render);
