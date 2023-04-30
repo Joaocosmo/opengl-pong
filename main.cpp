@@ -11,6 +11,7 @@ using namespace std;
 #define FROM_TOP 3
 #define FROM_BOTTOM 4
 
+static bool paused = false;
 static int WINDOW_WIDTH = 1000;
 static int WINDOW_HEIGHT = 600;
 
@@ -34,7 +35,7 @@ struct RECTA {
 struct CIRCLE {
   float x, y, radius,left, top, right, bottom;
 };
-CIRCLE ball = {100,120,20, 100,100,120,120};
+CIRCLE ball = {100,120,20,80,140,120,100};
 RECTA wall;
 RECTA player_1 = {30,200,35,400};
 RECTA player_2 = {970,200,975,400};
@@ -90,14 +91,17 @@ void updatePosPlayer() {
 }
 //Atualizar os valores de posicionamento da bola e barra
 void Timer(int v) {
-  ball.left += Xspeed;
-  ball.right += Xspeed;
-  ball.top += Yspeed;
-  ball.bottom += Yspeed;
-  ball.x += Xspeed;
-  ball.y += Yspeed;
-  updatePosPlayer();
-  glutTimerFunc(1, Timer, 1); // Acada 1 milisegundo cama Timer
+  if (!paused)
+  {
+    ball.left += Xspeed;
+    ball.right += Xspeed;
+    ball.top += Yspeed;
+    ball.bottom += Yspeed;
+    ball.x += Xspeed;
+    ball.y += Yspeed;
+    updatePosPlayer();
+    glutTimerFunc(1, Timer, 1); // Acada 1 milisegundo cama Timer
+  }
 }
 //Desenha texto
 void drawText(char * string, int x, int y) {
@@ -127,51 +131,23 @@ int checkCollisionBallWall(CIRCLE ball, RECTA wall) {
     return FROM_BOTTOM;
   else return 0;
 }
-//Varifica gol do jogador 1
-bool checkGollPlayer1(CIRCLE ball, RECTA player) //Esquerda
+//Varifica rebate do jogador 1
+bool checkRebatePlayer1(CIRCLE ball, RECTA player) //Esquerda
 {
-  if (ball.left <= player.right && ball.top >= player.top && ball.bottom <= player.bottom) {
+  int xmenosraio = ball.x - ball.radius;
+  if (xmenosraio <= player.right && ball.top >= player.top && ball.bottom <= player.bottom) {
     return true;
   }
   return false;
 }
-//Varifica gol do jogador 2
-bool checkgollPlayer2(CIRCLE ball, RECTA player) //Direita
+//Varifica rebate do jogador 2
+bool checkRebatePlayer2(CIRCLE ball, RECTA player) //Direita
 {
-  if (ball.right >= player.left && ball.top >= player.top && ball.bottom <= player.bottom) {
+  int xmaisraio = ball.x + ball.radius;
+  if (xmaisraio >= player.left && ball.top >= player.top && ball.bottom <= player.bottom) {
     return true;
   }
   return false;
-}
-//Adiciona velocidade a bola e barras de acordo com a media dos pontos
-void addSpeedWall(){
-   int mediaGols = (playerResult_1 + playerResult_2) / 2; 
-   if (mediaGols > 10)
-   {
-      delta = 16; 
-      playerSpeed = 50;
-   }else if(mediaGols > 8)
-   {
-      delta = 14; 
-      playerSpeed = 40;
-   }else if(mediaGols > 6)
-   {
-      delta = 12; 
-      playerSpeed = 30;
-   }else if(mediaGols > 5)
-   {
-      delta = 10;    
-      playerSpeed = 25;  
-   }else if(mediaGols > 4)
-   {
-      delta = 9;
-   }else if(mediaGols > 3)
-   {
-      delta = 8;
-   }else if(mediaGols > 1)
-   {
-      delta = 6;
-   }
 }
 //Verifica seleção de teclas especiais
 void eventSpecialKeyboard(GLint key, GLint x, GLint y) {
@@ -182,10 +158,18 @@ void eventSpecialKeyboard(GLint key, GLint x, GLint y) {
 }
 //Verifica seleção de teclas normais
 void eventKeyboard(GLubyte key, GLint x, GLint y) {
-  if (key == 'w')
-    ty1 = -playerSpeed;
-  else if (key == 's')
-    ty1 = playerSpeed;
+  switch (key) {
+    case 32: //Escape key                                                                                                                                    
+      paused = !paused;   
+      glutTimerFunc(1, Timer, 1);  
+      break;                                                                                                                      
+    case 'w':
+      ty1 = -playerSpeed;
+      break;
+    case 's':
+      ty1 = playerSpeed;
+      break;
+  }
 }
 // OpenGL Setting
 void Setting(void) {
@@ -206,51 +190,57 @@ void reshape(int w, int h) {
 }
 // Aplica os elementos em tela(a mais importante)
 void Render() {
-  glClear(GL_COLOR_BUFFER_BIT);
-  glLoadIdentity();
-  sprintf(string, " %d ", playerResult_1);
-  drawText(string, 300, 40); 
-  sprintf(string, " %d ", playerResult_2);
-  drawText(string, 600, 40);
-
-  wall.left = wall.top = 0;
-  wall.right = WINDOW_WIDTH;
-  wall.bottom = WINDOW_HEIGHT;
-
-  DrawCircle(ball);
-
-  switch (checkCollisionBallWall(ball, wall) )
+  if (!paused)
   {
-      case FROM_RIGHT:
-         Xspeed = -delta;
-         playerResult_1++;
-         break;
-      case FROM_LEFT:
-         Xspeed = delta;
-         playerResult_2++;
-         break;
-      case FROM_TOP:
-         Yspeed = delta;
-         break;
-      case FROM_BOTTOM:
-         Yspeed = -delta;
-         break;
-      default:
-         break;
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+    sprintf(string, " %d ", playerResult_1);
+    drawText(string, 300, 40); 
+    sprintf(string, " %d ", playerResult_2);
+    drawText(string, 600, 40);
+
+    wall.left = wall.top = 0;
+    wall.right = WINDOW_WIDTH;
+    wall.bottom = WINDOW_HEIGHT;
+
+    DrawCircle(ball);
+    switch (checkCollisionBallWall(ball, wall) )
+    {
+        case FROM_RIGHT:
+          Xspeed = -delta;
+          playerResult_1++;
+          delta = 4;
+          break;
+        case FROM_LEFT:
+          Xspeed = delta;
+          playerResult_2++;
+          delta = 4;
+          break;
+        case FROM_TOP:
+          Yspeed = delta;
+          break;
+        case FROM_BOTTOM:
+          Yspeed = -delta;
+          break;
+        default:
+          break;
+    }
+
+    DrawRectangle(player_1);
+    DrawRectangle(player_2);
+
+    if (checkRebatePlayer1(ball, player_1))
+    {
+      Xspeed = delta;
+      delta++;
+    }
+    if (checkRebatePlayer2(ball, player_2))
+    {
+      Xspeed = -delta;
+      delta++;
+    }
+    glutSwapBuffers(); //Troca de buffer
   }
-
-  DrawRectangle(player_1);
-  DrawRectangle(player_2);
-
-  if (checkGollPlayer1(ball, player_1))
-    Xspeed = delta;
-  if (checkgollPlayer2(ball, player_2))
-    Xspeed = -delta;
-
-  addSpeedWall();
-
-  glutSwapBuffers(); //Troca de buffer
-
 }
 
 int main(int argc, char ** argv) {
